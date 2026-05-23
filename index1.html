@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flash Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+Thai:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #f5c842;
+    --accent2: #e8506a;
+    --text: #f0f0f5;
+    --text-muted: #6b6b80;
+    --card-front: #1a1a22;
+    --card-back: #1e1428;
+    --radius: 20px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans Thai', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(245,200,66,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px; right: -150px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(232,80,106,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  header {
+    width: 100%;
+    max-width: 860px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+  .logo span { color: var(--text-muted); font-weight: 400; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+  }
+  .tab {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Noto Sans Thai', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+
+  /* PAGES */
+  .page { display: none; width: 100%; max-width: 860px; }
+  .page.active { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+
+  /* CARD EDITOR */
+  .editor-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .btn {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Noto Sans Thai', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all .18s;
+    font-weight: 600;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #ffd85a; transform: translateY(-1px); }
+  .btn-danger { background: transparent; color: var(--accent2); border: 1px solid var(--accent2); }
+  .btn-danger:hover { background: var(--accent2); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .card-form {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .form-group { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+  .form-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'Noto Sans Thai', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color .18s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+
+  .card-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .card-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: border-color .18s;
+  }
+  .card-item:hover { border-color: var(--border); }
+  .card-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    width: 24px;
+    text-align: center;
+  }
+  .card-word { font-weight: 600; flex: 1; }
+  .card-meaning { color: var(--text-muted); flex: 1.5; font-size: 0.9rem; }
+  .card-actions { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    transition: all .15s;
+  }
+  .icon-btn.del { background: rgba(232,80,106,0.12); color: var(--accent2); }
+  .icon-btn.del:hover { background: var(--accent2); color: #fff; }
+
+  /* PLAY PAGE */
+  .play-controls {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; }
+  .control-row { display: flex; align-items: center; gap: 10px; }
+  .select-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-family: 'Noto Sans Thai', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .speed-display {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 1rem;
+    min-width: 40px;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    width: 100px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+  }
+
+  /* PROGRESS & TIMER */
+  .play-status {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px;
+  }
+  .progress-info { font-size: 0.85rem; color: var(--text-muted); }
+  .progress-info strong { color: var(--text); font-family: 'Syne', sans-serif; }
+  .timer-ring-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .timer-ring {
+    position: relative;
+    width: 52px; height: 52px;
+  }
+  .timer-ring svg { transform: rotate(-90deg); }
+  .timer-ring circle {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .timer-ring .bg { stroke: var(--border); }
+  .timer-ring .fg {
+    stroke: var(--accent);
+    stroke-dasharray: 138.2;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset .1s linear, stroke .3s;
+  }
+  .timer-ring .fg.warn { stroke: var(--accent2); }
+  .timer-num {
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+
+  .progress-bar-wrap {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .4s ease;
+  }
+
+  /* FLASHCARD */
+  .card-scene {
+    perspective: 1200px;
+    width: 100%;
+    max-width: 560px;
+    height: 280px;
+    cursor: pointer;
+  }
+  .card-3d {
+    width: 100%; height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.4,0,.2,1);
+  }
+  .card-3d.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px;
+    user-select: none;
+  }
+  .card-front {
+    background: linear-gradient(135deg, #1a1a22 0%, #20202c 100%);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(245,200,66,0.06) inset;
+  }
+  .card-back {
+    background: linear-gradient(135deg, #1a1028 0%, #200f30 100%);
+    border: 1px solid rgba(245,200,66,0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(245,200,66,0.08) inset;
+    transform: rotateY(180deg);
+  }
+  .card-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--text-muted);
+  }
+  .card-content {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    text-align: center;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .card-back .card-content {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #d4b8ff;
+    font-family: 'Noto Sans Thai', sans-serif;
+  }
+  .flip-hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  /* NAV BUTTONS */
+  .card-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .nav-btn {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .18s;
+  }
+  .nav-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); transform: scale(1.08); }
+  .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .play-pause-btn {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #000;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .18s;
+    box-shadow: 0 8px 24px rgba(245,200,66,.3);
+  }
+  .play-pause-btn:hover { background: #ffd85a; transform: scale(1.08); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 48px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+  .empty-icon { font-size: 3rem; }
+
+  /* RESULTS */
+  .results-bar {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .stat-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.8rem; color: var(--accent); }
+  .stat-label { font-size: 0.75rem; color: var(--text-muted); }
+  .stat-divider { width: 1px; height: 40px; background: var(--border); }
+
+  /* SHUFFLE BADGE */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    background: rgba(245,200,66,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(245,200,66,0.2);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .page.active { animation: slideIn .3s ease; }
+
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .card-scene.auto-flip { animation: pulse .25s ease; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .card-form { flex-direction: column; }
+    .play-controls { gap: 14px; }
+    .card-content { font-size: 1.7rem; }
+    .card-back .card-content { font-size: 1.3rem; }
+    header { flex-direction: column; gap: 14px; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Flash<span>Cards</span></div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('edit')">✏️ จัดการคำ</button>
+    <button class="tab" onclick="switchTab('play')">▶ เล่นเกม</button>
+  </div>
+</header>
+
+<!-- EDIT PAGE -->
+<div class="page active" id="page-edit">
+  <div class="editor-header">
+    <div class="section-title">📚 คลังคำศัพท์ <span id="card-count-badge" class="badge">0 คำ</span></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="importDefault()">💡 ตัวอย่าง</button>
+      <button class="btn btn-danger" onclick="clearAll()">🗑 ล้างทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="card-form">
+    <div class="form-group">
+      <label class="form-label">คำ / Word</label>
+      <input class="form-input" id="input-word" placeholder="เช่น Apple, Ephemeral..." />
+    </div>
+    <div class="form-group" style="flex:1.5">
+      <label class="form-label">ความหมาย / Meaning</label>
+      <input class="form-input" id="input-meaning" placeholder="ความหมาย หรือ คำอธิบาย..." />
+    </div>
+    <button class="btn btn-primary" onclick="addCard()" style="height:44px;padding:0 24px">+ เพิ่ม</button>
+  </div>
+
+  <div class="card-list" id="card-list">
+    <div class="empty-state">
+      <div class="empty-icon">📝</div>
+      <div>ยังไม่มีคำศัพท์ กด <strong>💡 ตัวอย่าง</strong> เพื่อโหลดตัวอย่าง<br>หรือเพิ่มคำเองด้านบน</div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAY PAGE -->
+<div class="page" id="page-play">
+
+  <div class="play-controls">
+    <div class="control-group">
+      <span class="control-label">โหมด</span>
+      <div class="control-row">
+        <select class="select-input" id="show-mode">
+          <option value="word">คำ → ความหมาย</option>
+          <option value="meaning">ความหมาย → คำ</option>
+        </select>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">จับเวลา (วินาที)</span>
+      <div class="control-row">
+        <input type="range" id="timer-range" min="2" max="15" value="5" oninput="updateTimerDisplay()">
+        <span class="speed-display" id="timer-display">5s</span>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">สลับอัตโนมัติ</span>
+      <div class="control-row">
+        <select class="select-input" id="auto-flip">
+          <option value="off">ปิด</option>
+          <option value="on">เปิด</option>
+        </select>
+      </div>
+    </div>
+    <div class="control-group">
+      <span class="control-label">สุ่มลำดับ</span>
+      <div class="control-row">
+        <select class="select-input" id="shuffle-mode">
+          <option value="off">ปิด</option>
+          <option value="on">เปิด</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()" style="margin-top:auto">เริ่มเลย →</button>
+  </div>
+
+  <div id="play-area" style="width:100%;display:flex;flex-direction:column;align-items:center;gap:20px">
+    <div class="empty-state">
+      <div class="empty-icon">🎴</div>
+      <div>กด <strong>เริ่มเลย</strong> เพื่อเริ่มฝึก</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+let cards = JSON.parse(localStorage.getItem('flashcards') || '[]');
+let deck = [];
+let currentIndex = 0;
+let isFlipped = false;
+let isPlaying = false;
+let timerInterval = null;
+let timerLeft = 5;
+let autoNext = null;
+const CIRCUMFERENCE = 2 * Math.PI * 22; // r=22
+
+// ===== HELPERS =====
+function save() {
+  localStorage.setItem('flashcards', JSON.stringify(cards));
+  renderList();
+}
+
+function updateTimerDisplay() {
+  document.getElementById('timer-display').textContent = document.getElementById('timer-range').value + 's';
+}
+
+// ===== TAB =====
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='edit') || (i===1 && tab==='play')));
+  document.getElementById('page-edit').classList.toggle('active', tab==='edit');
+  document.getElementById('page-play').classList.toggle('active', tab==='play');
+  if (tab === 'edit') stopGame();
+}
+
+// ===== EDIT =====
+function addCard() {
+  const word = document.getElementById('input-word').value.trim();
+  const meaning = document.getElementById('input-meaning').value.trim();
+  if (!word || !meaning) return;
+  cards.push({ word, meaning });
+  save();
+  document.getElementById('input-word').value = '';
+  document.getElementById('input-meaning').value = '';
+  document.getElementById('input-word').focus();
+}
+
+document.getElementById('input-meaning').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addCard();
+});
+
+function deleteCard(i) {
+  cards.splice(i, 1);
+  save();
+}
+
+function clearAll() {
+  if (!cards.length) return;
+  const btn = document.querySelector('[onclick="clearAll()"]');
+  if (btn.dataset.confirm === '1') {
+    cards = []; save();
+    btn.textContent = '🗑 ล้างทั้งหมด';
+    btn.dataset.confirm = '0';
+  } else {
+    btn.textContent = '⚠️ ยืนยันล้าง?';
+    btn.dataset.confirm = '1';
+    setTimeout(() => {
+      btn.textContent = '🗑 ล้างทั้งหมด';
+      btn.dataset.confirm = '0';
+    }, 3000);
+  }
+}
+
+function importDefault() {
+  const sample = [
+    {word:'Ephemeral',meaning:'ชั่วคราว, ไม่ยั่งยืน'},
+    {word:'Resilience',meaning:'ความยืดหยุ่น, ความสามารถในการฟื้นตัว'},
+    {word:'Serendipity',meaning:'การค้นพบสิ่งดีโดยไม่ได้ตั้งใจ'},
+    {word:'Ambiguous',meaning:'คลุมเครือ, ไม่ชัดเจน'},
+    {word:'Eloquent',meaning:'พูดได้ไพเราะ, ใช้คำพูดได้ดี'},
+    {word:'Meticulous',meaning:'ละเอียดรอบคอบมาก'},
+    {word:'Tenacious',meaning:'มุ่งมั่น, ไม่ยอมแพ้'},
+    {word:'Ubiquitous',meaning:'มีอยู่ทุกที่'},
+  ];
+  cards = [...cards, ...sample];
+  save();
+}
+
+function renderList() {
+  const list = document.getElementById('card-list');
+  document.getElementById('card-count-badge').textContent = cards.length + ' คำ';
+  if (!cards.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div>ยังไม่มีคำศัพท์ กด <strong>💡 ตัวอย่าง</strong> เพื่อโหลดตัวอย่าง<br>หรือเพิ่มคำเองด้านบน</div></div>`;
+    return;
+  }
+  list.innerHTML = cards.map((c,i) => `
+    <div class="card-item">
+      <span class="card-num">${i+1}</span>
+      <span class="card-word">${c.word}</span>
+      <span class="card-meaning">${c.meaning}</span>
+      <div class="card-actions">
+        <button class="icon-btn del" onclick="deleteCard(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== PLAY =====
+function startGame() {
+  if (!cards.length) { alert('กรุณาเพิ่มคำศัพท์ก่อนนะ!'); return; }
+  deck = [...cards];
+  if (document.getElementById('shuffle-mode').value === 'on') shuffle(deck);
+  currentIndex = 0;
+  isPlaying = true;
+  renderPlayArea();
+  showCard(0, false);
+}
+
+function stopGame() {
+  isPlaying = false;
+  clearInterval(timerInterval);
+  clearTimeout(autoNext);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+}
+
+function renderPlayArea() {
+  const area = document.getElementById('play-area');
+  area.innerHTML = `
+    <div class="play-status">
+      <div class="progress-info">คำที่ <strong id="cur-num">1</strong> / <strong>${deck.length}</strong></div>
+      <div class="timer-ring-wrap">
+        <div class="timer-ring">
+          <svg width="52" height="52" viewBox="0 0 52 52">
+            <circle class="bg" cx="26" cy="26" r="22"/>
+            <circle class="fg" id="timer-circle" cx="26" cy="26" r="22" stroke-dasharray="${CIRCUMFERENCE}" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-num" id="timer-num">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <div class="card-scene" id="card-scene" onclick="flipCard()">
+      <div class="card-3d" id="card-3d">
+        <div class="card-face card-front">
+          <div class="card-label" id="front-label">คำศัพท์</div>
+          <div class="card-content" id="front-content">–</div>
+          <div class="flip-hint">👆 แตะเพื่อดูความหมาย</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-label" id="back-label">ความหมาย</div>
+          <div class="card-content" id="back-content">–</div>
+          <div class="flip-hint">👆 แตะเพื่อพลิกกลับ</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-nav">
+      <button class="nav-btn" id="prev-btn" onclick="prevCard()">←</button>
+      <button class="play-pause-btn" id="play-pause-btn" onclick="togglePlayPause()">⏸</button>
+      <button class="nav-btn" id="next-btn" onclick="nextCard()">→</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-ghost" onclick="startGame()">🔄 เริ่มใหม่</button>
+      <button class="btn btn-ghost" onclick="switchTab('edit')">✏️ แก้ไขคำ</button>
+    </div>
+  `;
+  isFlipped = false;
+}
+
+function showCard(index, animate = true) {
+  clearInterval(timerInterval);
+  clearTimeout(autoNext);
+  isFlipped = false;
+
+  const mode = document.getElementById('show-mode').value;
+  const card = deck[index];
+  const front = mode === 'word' ? card.word : card.meaning;
+  const back = mode === 'word' ? card.meaning : card.word;
+  const frontLabel = mode === 'word' ? 'คำศัพท์' : 'ความหมาย';
+  const backLabel = mode === 'word' ? 'ความหมาย' : 'คำศัพท์';
+
+  document.getElementById('front-content').textContent = front;
+  document.getElementById('back-content').textContent = back;
+  document.getElementById('front-label').textContent = frontLabel;
+  document.getElementById('back-label').textContent = backLabel;
+  document.getElementById('card-3d').classList.remove('flipped');
+  document.getElementById('cur-num').textContent = index + 1;
+
+  const pct = ((index + 1) / deck.length) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+  if (prevBtn) prevBtn.disabled = index === 0;
+  if (nextBtn) nextBtn.disabled = index === deck.length - 1;
+
+  if (isPlaying) startTimer();
+}
+
+let isPaused = false;
+
+function togglePlayPause() {
+  isPaused = !isPaused;
+  const btn = document.getElementById('play-pause-btn');
+  if (isPaused) {
+    clearInterval(timerInterval);
+    clearTimeout(autoNext);
+    btn.textContent = '▶';
+  } else {
+    btn.textContent = '⏸';
+    startTimer();
+  }
+}
+
+function startTimer() {
+  if (isPaused) return;
+  const duration = parseInt(document.getElementById('timer-range').value);
+  timerLeft = duration;
+  const circle = document.getElementById('timer-circle');
+  const numEl = document.getElementById('timer-num');
+
+  function tick() {
+    if (!circle || !numEl) return;
+    numEl.textContent = timerLeft;
+    const offset = CIRCUMFERENCE * (1 - timerLeft / duration);
+    circle.style.strokeDashoffset = offset;
+    circle.classList.toggle('warn', timerLeft <= 2);
+  }
+  tick();
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timerLeft--;
+    tick();
+    if (timerLeft <= 0) {
+      clearInterval(timerInterval);
+      const autoFlipOn = document.getElementById('auto-flip').value === 'on';
+      if (autoFlipOn && !isFlipped) {
+        flipCard();
+        autoNext = setTimeout(() => {
+          if (!isPaused) nextCardAuto();
+        }, 1000);
+      } else {
+        nextCardAuto();
+      }
+    }
+  }, 1000);
+}
+
+function nextCardAuto() {
+  if (currentIndex < deck.length - 1) {
+    currentIndex++;
+    showCard(currentIndex);
+  } else {
+    showFinished();
+  }
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('card-3d').classList.toggle('flipped', isFlipped);
+}
+
+function prevCard() {
+  clearInterval(timerInterval);
+  clearTimeout(autoNext);
+  if (currentIndex > 0) { currentIndex--; showCard(currentIndex); }
+}
+
+function nextCard() {
+  clearInterval(timerInterval);
+  clearTimeout(autoNext);
+  if (currentIndex < deck.length - 1) { currentIndex++; showCard(currentIndex); }
+  else showFinished();
+}
+
+function showFinished() {
+  clearInterval(timerInterval);
+  isPlaying = false;
+  const area = document.getElementById('play-area');
+  area.innerHTML = `
+    <div style="text-align:center;display:flex;flex-direction:column;align-items:center;gap:24px">
+      <div style="font-size:3rem">🎉</div>
+      <div style="font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800">เยี่ยมมาก!</div>
+      <div style="color:var(--text-muted)">คุณผ่านครบ ${deck.length} คำแล้ว</div>
+    </div>
+    <div class="results-bar">
+      <div class="stat"><div class="stat-num">${deck.length}</div><div class="stat-label">คำทั้งหมด</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num">${document.getElementById('timer-range').value}s</div><div class="stat-label">ต่อคำ</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><div class="stat-num">${document.getElementById('shuffle-mode').value === 'on' ? '🔀' : '📋'}</div><div class="stat-label">${document.getElementById('shuffle-mode').value === 'on' ? 'สลุม' : 'เรียงลำดับ'}</div></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-primary" onclick="startGame()">🔄 เล่นอีกรอบ</button>
+      <button class="btn btn-ghost" onclick="switchTab('edit')">✏️ แก้ไขคำ</button>
+    </div>
+  `;
+}
+
+// ===== KEYBOARD =====
+document.addEventListener('keydown', e => {
+  const playPage = document.getElementById('page-play').classList.contains('active');
+  if (!playPage || !isPlaying) return;
+  if (e.key === 'ArrowRight') nextCard();
+  else if (e.key === 'ArrowLeft') prevCard();
+  else if (e.key === ' ') { e.preventDefault(); flipCard(); }
+  else if (e.key === 'p' || e.key === 'P') togglePlayPause();
+});
+
+// ===== INIT =====
+renderList();
+</script>
+</body>
+</html>
